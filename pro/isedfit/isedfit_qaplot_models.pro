@@ -331,7 +331,7 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
                      xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
                      levels=mylevels, /internal, c_annotation=mycann
                 endif else begin
-                   djs_oplot, z[good], ygal, psym=symcat(6,thick=3), symsize=0.5, $
+                   djs_oplot, [z[good]], [ygal], psym=symcat(6,thick=3), symsize=0.5, $
                      color=im_color('dodger blue',100)
                 endelse
                 oplot, redshift, quant[*,0], line=0, color=im_color('red'), $

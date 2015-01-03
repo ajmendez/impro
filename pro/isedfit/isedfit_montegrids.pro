@@ -121,12 +121,21 @@ function get_bracket_files, info, sspinfo=sspinfo
     ninfo = n_elements(info)
     bracket_files = strarr(2,ninfo)
     
+    
+    
 ; ensure we do not mess with the orginal
     if tag_exist(sspinfo, 'tau_dust') then begin
       ; New search between dust and metal
+      taudims = n_elements(size(sspinfo.tau_dust,/dim))
       for ii = 0L, ninfo-1 do begin
          jj = findex(sspinfo.Zmetal[*,0], info[ii].Zmetal)
-         kk = findex(sspinfo.tau_dust[0,*], info[ii].tau_dust)
+         if taudims eq 1 then begin
+           ; nothing to search for so use the first one
+           kk = 0
+         endif else begin
+           kk = findex(sspinfo.tau_dust[0,*], info[ii].tau_dust)
+         endelse
+         
          j = [fix(jj), ceil(jj)]
          k = [fix(kk), ceil(kk)]
          bracket_files[0,ii] = sspinfo.sspfile[j[0], k[0]]
@@ -905,7 +914,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
        
 ; tau_dust -- modeled after metalicity
-        if tag_exist(sspinfo, tau_dust) then begin
+        if tag_exist(sspinfo, 'tau_dust') then begin
           if (params.tau_dust[0] lt min(sspinfo.tau_dust)) then begin
              splog, 'Adjusting minimum prior tau_dust!'
              params.tau_dust[0] = min(sspinfo.tau_dust)

@@ -70,7 +70,7 @@
 function im_read_fsps, metallicity=metallicity, basti=basti, $
   ckc14=ckc14, miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
   flambda=flambda, fnu=fnu, vacuum=vacuum, $
-  dust=dust, subdir=subdir
+  dust=dust, prefix=prefix, subdir=subdir
 
     ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/fsps/SSP/'
     if keyword_set(ckc14) then ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/CKC14z/'
@@ -96,8 +96,9 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     
     
     ;; Added dust amount, will be assumed to be zero otherwise
-    if n_elements(dust) ne 0 then begin
-      dust_prefix = '_D' + string(dust, format='(F0.5)')
+    if (n_elements(dust) ne 0) and (dust[0] ge 0) then begin
+      dust_prefix = '_D' + string(dust, format='(F0.6)')
+      if n_elements(prefix) gt 0 then dust_prefix = prefix
     endif else begin
       dust = 0.0
       dust_prefix = ''

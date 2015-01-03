@@ -43,7 +43,7 @@
 ;-
 
 pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
-  doitall=doitall, dust=dust, subdir=subdir
+  doitall=doitall, adddust=adddust, subdir=subdir, fsps_ver=fsps_ver
 
     if keyword_set(doitall) then begin
 ; Salpeter with and without MILES
@@ -55,16 +55,13 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
 ; Chabrier with and without MILES
        build_fsps_ssp, kroupa=0, chabrier=1, miles=0
        build_fsps_ssp, kroupa=0, chabrier=1, miles=1
-; [mendez] Chabrier, MILES and DUST
-       build_fsps_ssp, kroupa=0, chabrier=1, miles=1, $
-          dust=1, subdir='dust_array'
        return
     endif
     
     splog, 'Building the FSPS SSPs'
     outpath = getenv('ISEDFIT_SSP_DIR')+'/'
 
-    fsps_ver = 'v2.4'           ; hard-coded version number!
+    if n_elements(fsps_ver) eq 0 then fsps_ver = 'v2.4'           ; [less] hard-coded version number!
     imfstr = 'salp'
     if keyword_set(kroupa) then imfstr = 'kroupa01'
     if keyword_set(chabrier) then imfstr = 'chab'
@@ -87,16 +84,18 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
     endelse
   
 ; Build up the dust parameters
-    if keyword_set(dust) then begin
+    if keyword_set(adddust) then begin
       fsps_ver += 'dust'
-      DUSTval = [0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0]
-      DUSTstr = '_D' + string(DUSTval, format='(F0.5)')
-      ;
-      ; DUSTstr = '_' + ['D0.00000', 'D0.00001', 'D0.00010', 'D0.00100', $
-      ;            'D0.01000', 'D0.10000', 'D1.00000']
-      
-    endif else DUSTstr = ''
-    nDust = n_elements(DUSTstr)
+      dustval = [0.0, 1e-06, 5e-06, 1e-05, 5e-05, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]      
+      DUSTstr = '_D' + string(DUSTval, format='(F0.6)') ; ugh floats
+      nDust = n_elements(DUSTstr)
+    endif else begin
+      nDust = 1
+      duststr = ['']
+      dustval = [-1]
+    endelse
+    
+    
   
 ; read each SSP in turn, convert to a FITS structure, do some magic,
 ; and then write out
@@ -119,10 +118,10 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
     TAU_dust = fltarr(nZ, nDust)
     sspfile = strarr(nZ, nDust)
     for iZ = 0, nZ-1 do begin
-      for iD = 0, nDust-1 do begin
+      for iDust = 0, nDust-1 do begin
          fsps = im_read_fsps(metallicity=Zstr[iZ],$ ; Padova/BaSeL unless /MILES
            kroupa=kroupa,chabrier=chabrier,miles=miles,$
-           dust=dustval[id], subdir=subdir)
+           dust=dustval[iDust], subdir=subdir)
          nage = n_elements(fsps.age)
          npix = n_elements(fsps.wave)
          ssp = init_isedfit_ssp(nage=nage,npix=npix)
@@ -151,14 +150,14 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
 ; write out       
          sspfile1 = 'fsps_'+fsps_ver+$
                     '_'+sspstr+'_'+imfstr+$
-                    DUSTstr[iD]+$
+                    DUSTstr[iDust]+$
                     '_Z'+$
            string(ssp.Zmetal,format='(G0.0)')+'.fits'
          im_mwrfits, ssp, ssppath+sspfile1, /clobber
 
-         Z[iZ, iD] = ssp.Zmetal
-         TAU_dust[iZ, iD] = ssp.tau_dust
-         sspfile[iZ, iD] = sspfile1
+         Z[iZ, iDust] = ssp.Zmetal
+         TAU_dust[iZ, iDust] = ssp.tau_dust
+         sspfile[iZ, iDust] = sspfile1
        endfor
      endfor
 
@@ -181,7 +180,7 @@ end
 
 pro test_dust_ssp
   setenv, 'ISEDFIT_SSP_DIR=~/raid/isedfit4/isedfit_ssp/'
-  build_fsps_ssp, kroupa=0, chabrier=1, miles=1, $
-     dust=1, subdir='dust_array'
+  setenv, 'ISEDFIT_SSP_DIR=~/raid/isedfit4/isedfit_ssp/'
+  build_fsps_ssp, kroupa=0, chabrier=1, miles=1, dust=1, subdir='dust_array2'
 end
 
